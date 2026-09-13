@@ -1,0 +1,10 @@
+{
+  "name": "web-games",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:tennis": "pnpm --filter @web-games/tennis-2d dev",
+    "build": "pnpm --recursive --if-present build"
+  },
+  "packageManager": "pnpm@10.15.1"
+}
