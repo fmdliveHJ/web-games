@@ -1,7 +1,16 @@
 import './style.css';
 
+const puzzleImageUrl = new URL('../public/assets/find-nadal-melbourne.png', import.meta.url).href;
+const nadalImageUrl = new URL('../public/assets/nadal-target.png', import.meta.url).href;
 const GAME_SECONDS = 30;
 const TARGET = { x: 74, y: 64, radius: 2.5 };
+
+function saveCompletion(): void {
+  const key = 'melbourne-arcade-completed';
+  const completed = new Set<string>(JSON.parse(localStorage.getItem(key) ?? '[]'));
+  completed.add('find-nadal');
+  localStorage.setItem(key, JSON.stringify([...completed]));
+}
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div class="shell">
@@ -14,8 +23,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <section class="game" aria-label="나달 찾기 게임">
       <div class="viewport" id="viewport">
         <div class="board" id="board">
-          <img src="/assets/find-nadal-melbourne.png" alt="사람들로 가득한 멜버른 테니스 축제 숨은그림찾기 일러스트" draggable="false" />
-          <img class="hidden-nadal" src="/assets/nadal-target.png" alt="" draggable="false" />
+          <img src="${puzzleImageUrl}" alt="사람들로 가득한 멜버른 테니스 축제 숨은그림찾기 일러스트" draggable="false" />
+          <img class="hidden-nadal" src="${nadalImageUrl}" alt="" draggable="false" />
           <button class="target" id="target" type="button" aria-label="정답 위치"></button>
           <div class="reveal-ring" id="revealRing"></div>
         </div>
@@ -34,7 +43,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <span class="eyebrow">MELBOURNE TENNIS FESTIVAL</span>
         <h1 id="introTitle">진짜 나달을<br /><em>찾아라!</em></h1>
         <div class="target-card">
-          <img class="target-preview" src="/assets/nadal-target.png" alt="찾아야 할 나달의 모습" />
+          <img class="target-preview" src="${nadalImageUrl}" alt="찾아야 할 나달의 모습" />
           <div><b>이 나달을 찾으세요</b><span>퍼즐 속 실제 정답 모습</span></div>
         </div>
         <p>수많은 닮은꼴 사이에 위 나달은 단 한 명.<br />30초 안에 같은 인물을 찾아 클릭하세요.</p>
@@ -59,7 +68,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <button id="closeHint" type="button" aria-label="단서 닫기">×</button>
       <span class="eyebrow">PLAYER PROFILE</span>
       <h2>진짜 나달의 특징</h2>
-      <img class="target-preview hint-preview" src="/assets/nadal-target.png" alt="찾아야 할 나달의 모습" />
+      <img class="target-preview hint-preview" src="${nadalImageUrl}" alt="찾아야 할 나달의 모습" />
       <ul><li><i class="white"></i>매듭이 보이는 흰 헤드밴드</li><li><i class="coral"></i>코랄색 민소매 상의</li><li><i class="navy"></i>라켓은 왼손에</li></ul>
       <p>안경, 모자, 콧수염이 있다면 닮은꼴입니다.</p>
     </aside>
@@ -148,6 +157,7 @@ function startGame(): void {
 function finish(won: boolean): void {
   if (!playing) return;
   playing = false;
+  if (won) saveCompletion();
   window.clearInterval(interval);
   board.classList.add('revealed');
   const elapsed = GAME_SECONDS - timeLeft;
