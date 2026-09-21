@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Noto+Sans+KR:wght@500;700;900&display=swap');
+:root { font-family:'Noto Sans KR',sans-serif; color:#fff; background:#071b3d; font-synthesis:none; }
+* { box-sizing:border-box; }
+html,body,#app { width:100%; height:100%; margin:0; overflow:hidden; }
+button { font:inherit; }
+.shell { height:100%; display:grid; grid-template-rows:74px 1fr; background:#071b3d; }
+.hud { z-index:5; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:0 26px; background:#071b3d; border-bottom:1px solid #29496e; box-shadow:0 7px 25px rgba(0,0,0,.3); }
+.brand { display:flex; align-items:center; gap:10px; font-family:'Archivo Black'; font-size:19px; }.brand small { padding-left:10px; border-left:1px solid #49627f; color:#88a7c7; font-size:9px; letter-spacing:2px; }
+.ball-logo { width:29px; height:29px; display:grid; place-items:center; color:#071b3d; background:#d9fa3c; border-radius:50%; font-size:11px; box-shadow:inset -4px -2px 0 rgba(0,0,0,.1); }
+.score { text-align:center; }.score span,.status span { display:block; color:#88a7c7; font-size:8px; font-weight:900; letter-spacing:1.5px; }.score strong { font-family:'Archivo Black'; font-size:23px; letter-spacing:2px; }.status { justify-self:end; text-align:right; }.status strong { color:#ff6658; letter-spacing:4px; }
+.stage { position:relative; min-height:0; display:grid; place-items:center; overflow:hidden; background:#031027; }
+canvas { display:block; width:100%; height:100%; object-fit:contain; }
+.combo { position:absolute; top:44%; left:50%; z-index:6; opacity:0; color:#d9fa3c; font-family:'Archivo Black'; font-size:54px; text-shadow:4px 4px 0 #071b3d; pointer-events:none; transform:translate(-50%,-50%) scale(.4) rotate(-8deg); }
+.combo.show { animation:combo .65s ease-out; }
+.touch-controls { position:absolute; z-index:8; left:50%; bottom:16px; display:none; gap:9px; transform:translateX(-50%); }
+.touch-controls button { width:62px; height:54px; color:#fff; background:rgba(7,27,61,.9); border:1px solid #7690ad; border-radius:13px; font-weight:900; touch-action:none; }.touch-controls button:nth-child(2) { width:92px; color:#071b3d; background:#d9fa3c; border:2px solid #071b3d; box-shadow:4px 4px 0 #ff5b4b; }
+.modal { position:fixed; z-index:20; inset:0; display:grid; place-items:center; padding:20px; visibility:hidden; opacity:0; background:rgba(2,13,32,.8); backdrop-filter:blur(8px); transition:.25s; }.modal.is-open { visibility:visible; opacity:1; }
+.card { width:min(450px,94vw); padding:34px 38px 39px; text-align:center; color:#071b3d; background:#f8f4e9; border:2px solid #071b3d; box-shadow:12px 12px 0 #d9fa3c; transform:translateY(12px) rotate(-.4deg); transition:.3s; }.modal.is-open .card { transform:translateY(0) rotate(-.4deg); }
+.eyebrow { display:block; color:#2772b9; font-size:9px; font-weight:900; letter-spacing:2.3px; }
+.hero-icon { position:relative; width:86px; height:86px; display:grid; place-items:center; margin:15px auto 8px; background:#54dff5; border:2px solid #071b3d; border-radius:50%; box-shadow:5px 5px 0 #ff6554; }.hero-icon span { font-size:38px; }.hero-icon i { position:absolute; right:-7px; bottom:5px; width:30px; height:7px; background:#071b3d; transform:rotate(-45deg); }
+.card h1,.card h2 { margin:0; font-family:'Archivo Black','Noto Sans KR'; font-size:52px; line-height:.9; letter-spacing:-2px; }.card h1 em { color:#ff5948; font-style:normal; }.card h2 { font-size:38px; line-height:1.05; }
+.card p { margin:19px 0; color:#52657a; font-size:13px; line-height:1.7; }.key-guide { display:grid; grid-template-columns:auto auto auto auto; align-items:center; justify-content:center; gap:7px; margin-bottom:22px; color:#748092; font-size:9px; }kbd { padding:6px 8px; color:#173b65; background:#dce8eb; border:1px solid #aebcc4; border-bottom-width:3px; border-radius:5px; font-family:inherit; font-weight:900; }
+.primary { min-width:220px; padding:14px 20px; color:#fff; background:#0c3971; border:0; border-radius:4px; box-shadow:5px 5px 0 #ff5948; font-size:13px; font-weight:900; letter-spacing:.5px; cursor:pointer; }.primary:hover { transform:translate(2px,2px); box-shadow:3px 3px 0 #ff5948; }.primary b { margin-left:13px; font-size:17px; }
+.trophy { display:block; margin-bottom:13px; font-size:60px; }.result-card .eyebrow { margin-bottom:12px; }
+@keyframes combo { 0% { opacity:0; transform:translate(-50%,-50%) scale(.3) rotate(-12deg); } 35% { opacity:1; transform:translate(-50%,-50%) scale(1.1) rotate(-5deg); } 100% { opacity:0; transform:translate(-50%,-70%) scale(1) rotate(-3deg); } }
+@media (max-width:760px),(pointer:coarse) { .shell { grid-template-rows:60px 1fr; }.hud { padding:0 10px; }.brand { font-size:12px; }.brand small { display:none; }.ball-logo { width:23px; height:23px; }.score strong { font-size:16px; }.status strong { font-size:11px; letter-spacing:1px; }.touch-controls { display:flex; }.card { padding:27px 21px 31px; }.card h1 { font-size:43px; }.key-guide { grid-template-columns:auto auto; } }
