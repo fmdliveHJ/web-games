@@ -8,6 +8,15 @@ importers:
 
   .: {}
 
+  games/find-nadal:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vite:
+        specifier: ^7.1.5
+        version: 7.3.6
+
   games/tennis-2d:
     dependencies:
       phaser:

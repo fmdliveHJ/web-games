@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev:tennis": "pnpm --filter @web-games/tennis-2d dev",
+    "dev:find-nadal": "pnpm --filter @web-games/find-nadal dev",
     "build": "pnpm --recursive --if-present build"
   },
   "packageManager": "pnpm@10.15.1"
