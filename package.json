@@ -3,9 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "dev": "vite",
     "dev:tennis": "pnpm --filter @web-games/tennis-2d dev",
     "dev:find-nadal": "pnpm --filter @web-games/find-nadal dev",
+    "dev:territory": "pnpm --filter @web-games/ao-territory dev",
+    "dev:breakout": "pnpm --filter @web-games/tennis-breakout dev",
     "build": "pnpm --recursive --if-present build"
+  },
+  "devDependencies": {
+    "vite": "^7.1.5"
   },
   "packageManager": "pnpm@10.15.1"
 }
