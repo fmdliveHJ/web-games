@@ -23,6 +23,10 @@ import { Ball } from '../objects/Ball';
 import { BrickField } from '../objects/BrickField';
 import { Paddle, type PaddleMovementBounds } from '../objects/Paddle';
 import { CollisionSystem } from '../systems/CollisionSystem';
+import {
+  GameState,
+  type GameSnapshot,
+} from '../systems/GameState';
 
 export function clampDelta(delta: number, maxDelta: number): number {
   return Math.min(delta, maxDelta);
@@ -34,6 +38,7 @@ export function cameraScaleForAspect(aspect: number): number {
 }
 
 export type ViewMode = '2d' | '3d';
+export type GameStateListener = (snapshot: GameSnapshot) => void;
 
 export class Game {
   private readonly scene: Scene;
@@ -45,6 +50,8 @@ export class Game {
   private readonly brickBurst: BrickBurst;
   private readonly paddle: Paddle;
   private readonly collisionSystem: CollisionSystem;
+  private readonly gameState = new GameState(gameConfig.initialLives);
+  private readonly stateListeners = new Set<GameStateListener>();
   private readonly keyboardInput: KeyboardInput;
   private readonly pointerInput: PointerInput;
   private readonly paddleBounds: PaddleMovementBounds;
@@ -148,6 +155,24 @@ export class Game {
     this.updateCameraPosition(this.camera.aspect);
   }
 
+  public startRound(): void {
+    this.emitState(this.gameState.start());
+  }
+
+  public restart(): void {
+    this.brickBurst.clear();
+    this.brickField.reset();
+    this.ball.reset();
+    this.resetPaddle();
+    this.emitState(this.gameState.reset());
+  }
+
+  public onStateChange(listener: GameStateListener): () => void {
+    this.stateListeners.add(listener);
+    listener(this.gameState.snapshot);
+    return () => this.stateListeners.delete(listener);
+  }
+
   public dispose(): void {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
@@ -176,10 +201,20 @@ export class Game {
 
     this.renderer.dispose();
     this.renderer.domElement.remove();
+    this.stateListeners.clear();
   }
 
   private readonly frame = (): void => {
     const delta = clampDelta(this.clock.getDelta(), gameConfig.maxDelta);
+    if (this.gameState.snapshot.phase === 'playing') {
+      this.updatePlaying(delta);
+    }
+    this.brickBurst.update(delta);
+    this.renderer.render(this.scene, this.camera);
+    this.animationFrameId = requestAnimationFrame(this.frame);
+  };
+
+  private updatePlaying(delta: number): void {
     const paddleDirection = this.keyboardInput.getDirection();
     this.paddle.move(
       paddleDirection.x * gameConfig.paddle.keyboardSpeed * delta,
@@ -188,25 +223,41 @@ export class Game {
     );
     this.paddle.updateVelocity(delta, gameConfig.paddle.maxTrackedSpeed);
     this.ball.update(delta);
+
     const collisionEvents = this.collisionSystem.update(
       this.ball,
       this.paddle,
       this.brickField.activeBricks,
     );
-    for (const event of collisionEvents) {
-      if (event.type !== 'brick' || !this.brickField.remove(event.brick)) {
-        continue;
-      }
 
-      this.brickBurst.spawn(
-        event.brick.mesh.position,
-        event.brick.mesh.material.color.getHex(),
-      );
+    for (const event of collisionEvents) {
+      if (event.type === 'brick' && this.brickField.remove(event.brick)) {
+        this.brickBurst.spawn(
+          event.brick.mesh.position,
+          event.brick.mesh.material.color.getHex(),
+        );
+        this.emitState(this.gameState.addScore(event.brick.score));
+        if (this.brickField.remaining === 0) {
+          this.emitState(this.gameState.win());
+        }
+      } else if (event.type === 'reset') {
+        this.resetPaddle();
+        this.emitState(this.gameState.loseLife());
+      }
     }
-    this.brickBurst.update(delta);
-    this.renderer.render(this.scene, this.camera);
-    this.animationFrameId = requestAnimationFrame(this.frame);
-  };
+  }
+
+  private resetPaddle(): void {
+    this.paddle.reset(
+      new Vector3(0, gameConfig.paddle.height / 2, gameConfig.paddle.z),
+    );
+  }
+
+  private emitState(snapshot: GameSnapshot): void {
+    for (const listener of this.stateListeners) {
+      listener(snapshot);
+    }
+  }
 
   private readonly resize = (): void => {
     const width = Math.max(1, this.root.clientWidth);

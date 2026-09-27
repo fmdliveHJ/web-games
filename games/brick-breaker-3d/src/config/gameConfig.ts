@@ -1,4 +1,5 @@
 export const gameConfig = {
+  initialLives: 3,
   arena: {
     width: 16,
     depth: 22,

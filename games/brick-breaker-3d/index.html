@@ -7,11 +7,29 @@
   </head>
   <body>
     <main id="app">
+      <header class="hud" aria-label="게임 상태">
+        <div>
+          <span class="hud__label">SCORE</span>
+          <strong data-score aria-live="polite">0000</strong>
+        </div>
+        <div class="hud__lives">
+          <span class="hud__label">LIVES</span>
+          <strong data-lives aria-label="남은 목숨 3개">● ● ●</strong>
+        </div>
+      </header>
       <div class="view-switcher" aria-label="화면 시점 선택">
         <button type="button" data-view-mode="2d" aria-pressed="false">2D 보기</button>
         <button type="button" data-view-mode="3d" aria-pressed="true">3D 보기</button>
       </div>
       <p class="instructions">방향키/WASD · 모바일 터치로 이동</p>
+      <section class="game-overlay" data-game-overlay>
+        <div class="game-overlay__card">
+          <span class="game-overlay__eyebrow">COURT SESSION 01</span>
+          <h1 data-overlay-title>ACE THE COURT</h1>
+          <p data-overlay-description>움직임을 실어 공을 받아치고 모든 블록을 깨보세요.</p>
+          <button type="button" data-game-action>게임 시작</button>
+        </div>
+      </section>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

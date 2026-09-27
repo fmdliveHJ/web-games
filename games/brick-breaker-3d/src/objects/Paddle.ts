@@ -87,6 +87,12 @@ export class Paddle {
     this.previousPosition.set(currentX, currentZ);
   }
 
+  public reset(position: Vector3): void {
+    this.mesh.position.copy(position);
+    this.previousPosition.set(position.x, position.z);
+    this.velocity.set(0, 0);
+  }
+
   public dispose(): void {
     this.mesh.geometry.dispose();
     this.mesh.material.dispose();
