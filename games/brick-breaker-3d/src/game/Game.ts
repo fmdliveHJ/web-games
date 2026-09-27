@@ -16,9 +16,11 @@ import {
   WebGLRenderer,
 } from 'three';
 import { gameConfig } from '../config/gameConfig';
+import { BrickBurst } from '../effects/BrickBurst';
 import { KeyboardInput } from '../input/KeyboardInput';
 import { PointerInput } from '../input/PointerInput';
 import { Ball } from '../objects/Ball';
+import { BrickField } from '../objects/BrickField';
 import { Paddle, type PaddleMovementBounds } from '../objects/Paddle';
 import { CollisionSystem } from '../systems/CollisionSystem';
 
@@ -39,6 +41,8 @@ export class Game {
   private readonly renderer: WebGLRenderer;
   private readonly clock = new Clock(false);
   private readonly ball: Ball;
+  private readonly brickField: BrickField;
+  private readonly brickBurst: BrickBurst;
   private readonly paddle: Paddle;
   private readonly collisionSystem: CollisionSystem;
   private readonly keyboardInput: KeyboardInput;
@@ -82,6 +86,8 @@ export class Game {
 
     this.addLights();
     this.grid = this.addArena();
+    this.brickField = new BrickField(this.scene, gameConfig.bricks);
+    this.brickBurst = new BrickBurst(this.scene);
 
     this.ball = new Ball({
       radius: gameConfig.ball.radius,
@@ -151,6 +157,8 @@ export class Game {
     window.removeEventListener('resize', this.resize);
     this.keyboardInput.dispose();
     this.pointerInput.dispose();
+    this.brickField.dispose();
+    this.brickBurst.dispose();
     this.ball.dispose();
     this.paddle.dispose();
 
@@ -180,7 +188,22 @@ export class Game {
     );
     this.paddle.updateVelocity(delta, gameConfig.paddle.maxTrackedSpeed);
     this.ball.update(delta);
-    this.collisionSystem.update(this.ball, this.paddle);
+    const collisionEvents = this.collisionSystem.update(
+      this.ball,
+      this.paddle,
+      this.brickField.activeBricks,
+    );
+    for (const event of collisionEvents) {
+      if (event.type !== 'brick' || !this.brickField.remove(event.brick)) {
+        continue;
+      }
+
+      this.brickBurst.spawn(
+        event.brick.mesh.position,
+        event.brick.mesh.material.color.getHex(),
+      );
+    }
+    this.brickBurst.update(delta);
     this.renderer.render(this.scene, this.camera);
     this.animationFrameId = requestAnimationFrame(this.frame);
   };

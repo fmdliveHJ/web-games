@@ -1,4 +1,5 @@
 import type { Ball } from '../objects/Ball';
+import type { Brick } from '../objects/Brick';
 import type { Paddle } from '../objects/Paddle';
 
 export interface ArenaBounds {
@@ -12,24 +13,30 @@ export interface ArenaBounds {
 }
 
 export type CollisionEvent =
-  | 'side-wall'
-  | 'back-wall'
-  | 'paddle'
-  | 'reset';
+  | { type: 'side-wall' }
+  | { type: 'back-wall' }
+  | { type: 'paddle' }
+  | { type: 'brick'; brick: Brick }
+  | { type: 'reset' };
 
 export class CollisionSystem {
   public constructor(private readonly bounds: ArenaBounds) {}
 
-  public update(ball: Ball, paddle: Paddle): CollisionEvent[] {
+  public update(
+    ball: Ball,
+    paddle: Paddle,
+    bricks: readonly Brick[] = [],
+  ): CollisionEvent[] {
     const events: CollisionEvent[] = [];
 
     this.resolveSideWalls(ball, events);
     this.resolveBackWall(ball, events);
+    this.resolveBrick(ball, bricks, events);
     this.resolvePaddle(ball, paddle, events);
 
     if (ball.mesh.position.z - ball.radius > this.bounds.resetZ) {
       ball.reset();
-      events.push('reset');
+      events.push({ type: 'reset' });
     }
 
     return events;
@@ -41,11 +48,11 @@ export class CollisionSystem {
     if (position.x + ball.radius > this.bounds.maxX) {
       position.x = this.bounds.maxX - ball.radius;
       ball.velocity.x = -Math.abs(ball.velocity.x);
-      events.push('side-wall');
+      events.push({ type: 'side-wall' });
     } else if (position.x - ball.radius < this.bounds.minX) {
       position.x = this.bounds.minX + ball.radius;
       ball.velocity.x = Math.abs(ball.velocity.x);
-      events.push('side-wall');
+      events.push({ type: 'side-wall' });
     }
   }
 
@@ -53,7 +60,7 @@ export class CollisionSystem {
     if (ball.mesh.position.z - ball.radius < this.bounds.backZ) {
       ball.mesh.position.z = this.bounds.backZ + ball.radius;
       ball.velocity.z = Math.abs(ball.velocity.z);
-      events.push('back-wall');
+      events.push({ type: 'back-wall' });
     }
   }
 
@@ -104,6 +111,56 @@ export class CollisionSystem {
       )
       .normalize()
       .multiplyScalar(nextBallSpeed);
-    events.push('paddle');
+    events.push({ type: 'paddle' });
+  }
+
+  private resolveBrick(
+    ball: Ball,
+    bricks: readonly Brick[],
+    events: CollisionEvent[],
+  ): void {
+    const ballPosition = ball.mesh.position;
+
+    for (const brick of bricks) {
+      if (!brick.active) {
+        continue;
+      }
+
+      const brickPosition = brick.mesh.position;
+      const halfWidth = brick.width / 2;
+      const halfDepth = brick.depth / 2;
+      const closestX = Math.max(
+        brickPosition.x - halfWidth,
+        Math.min(ballPosition.x, brickPosition.x + halfWidth),
+      );
+      const closestZ = Math.max(
+        brickPosition.z - halfDepth,
+        Math.min(ballPosition.z, brickPosition.z + halfDepth),
+      );
+      const distanceX = ballPosition.x - closestX;
+      const distanceZ = ballPosition.z - closestZ;
+
+      if (distanceX ** 2 + distanceZ ** 2 > ball.radius ** 2) {
+        continue;
+      }
+
+      const centerDeltaX = ballPosition.x - brickPosition.x;
+      const centerDeltaZ = ballPosition.z - brickPosition.z;
+      const penetrationX = halfWidth + ball.radius - Math.abs(centerDeltaX);
+      const penetrationZ = halfDepth + ball.radius - Math.abs(centerDeltaZ);
+
+      if (penetrationX < penetrationZ) {
+        const side = centerDeltaX === 0 ? -Math.sign(ball.velocity.x) : Math.sign(centerDeltaX);
+        ballPosition.x = brickPosition.x + side * (halfWidth + ball.radius);
+        ball.velocity.x *= -1;
+      } else {
+        const side = centerDeltaZ === 0 ? -Math.sign(ball.velocity.z) : Math.sign(centerDeltaZ);
+        ballPosition.z = brickPosition.z + side * (halfDepth + ball.radius);
+        ball.velocity.z *= -1;
+      }
+
+      events.push({ type: 'brick', brick });
+      return;
+    }
   }
 }
