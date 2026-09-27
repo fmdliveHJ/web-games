@@ -23,6 +23,11 @@ export function clampDelta(delta: number, maxDelta: number): number {
   return Math.min(delta, maxDelta);
 }
 
+export function cameraScaleForAspect(aspect: number): number {
+  const safeAspect = Math.max(aspect, 0.01);
+  return Math.max(1, 0.9 / safeAspect);
+}
+
 export class Game {
   private readonly scene: Scene;
   private readonly camera: PerspectiveCamera;
@@ -51,8 +56,7 @@ export class Game {
       camera.near,
       camera.far,
     );
-    this.camera.position.set(...camera.position);
-    this.camera.lookAt(...camera.lookAt);
+    this.updateCameraPosition(width / height);
 
     this.renderer = new WebGLRenderer({ antialias: true });
     this.renderer.setSize(width, height, false);
@@ -142,6 +146,7 @@ export class Game {
     const height = Math.max(1, this.root.clientHeight);
 
     this.camera.aspect = width / height;
+    this.updateCameraPosition(this.camera.aspect);
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -153,6 +158,13 @@ export class Game {
     const keyLight = new DirectionalLight(0xffffff, 2.4);
     keyLight.position.set(-6, 12, 8);
     this.scene.add(keyLight);
+  }
+
+  private updateCameraPosition(aspect: number): void {
+    const scale = cameraScaleForAspect(aspect);
+    const [x, y, z] = gameConfig.camera.position;
+    this.camera.position.set(x * scale, y * scale, z * scale);
+    this.camera.lookAt(...gameConfig.camera.lookAt);
   }
 
   private addArena(): void {
