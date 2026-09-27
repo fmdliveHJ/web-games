@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
+    "dev:brick-breaker": "pnpm --filter @web-games/brick-breaker-3d dev",
     "dev:tennis": "pnpm --filter @web-games/tennis-2d dev",
     "dev:find-nadal": "pnpm --filter @web-games/find-nadal dev",
     "dev:territory": "pnpm --filter @web-games/ao-territory dev",
