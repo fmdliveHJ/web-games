@@ -14,9 +14,10 @@ import {
   WebGLRenderer,
 } from 'three';
 import { gameConfig } from '../config/gameConfig';
+import { KeyboardInput } from '../input/KeyboardInput';
 import { PointerInput } from '../input/PointerInput';
 import { Ball } from '../objects/Ball';
-import { Paddle } from '../objects/Paddle';
+import { Paddle, type PaddleMovementBounds } from '../objects/Paddle';
 import { CollisionSystem } from '../systems/CollisionSystem';
 
 export function clampDelta(delta: number, maxDelta: number): number {
@@ -36,7 +37,9 @@ export class Game {
   private readonly ball: Ball;
   private readonly paddle: Paddle;
   private readonly collisionSystem: CollisionSystem;
+  private readonly keyboardInput: KeyboardInput;
   private readonly pointerInput: PointerInput;
+  private readonly paddleBounds: PaddleMovementBounds;
   private readonly arenaMeshes: Mesh<BufferGeometry, MeshStandardMaterial>[] = [];
   private animationFrameId: number | null = null;
 
@@ -46,6 +49,12 @@ export class Game {
     const { arena, camera, colors } = gameConfig;
     const minX = -arena.width / 2;
     const maxX = arena.width / 2;
+    this.paddleBounds = {
+      minX,
+      maxX,
+      minZ: gameConfig.paddle.minZ,
+      maxZ: gameConfig.paddle.maxZ,
+    };
 
     this.scene = new Scene();
     this.scene.background = new Color(colors.background);
@@ -94,11 +103,12 @@ export class Game {
       backZ: arena.backZ,
       resetZ: arena.frontZ,
     });
+    this.keyboardInput = new KeyboardInput(window);
     this.pointerInput = new PointerInput(
       this.renderer.domElement,
       this.camera,
       0,
-      (x) => this.paddle.setX(x, minX, maxX),
+      (x, z) => this.paddle.setPosition(x, z, this.paddleBounds),
     );
 
     window.addEventListener('resize', this.resize);
@@ -120,6 +130,7 @@ export class Game {
     }
 
     window.removeEventListener('resize', this.resize);
+    this.keyboardInput.dispose();
     this.pointerInput.dispose();
     this.ball.dispose();
     this.paddle.dispose();
@@ -135,6 +146,12 @@ export class Game {
 
   private readonly frame = (): void => {
     const delta = clampDelta(this.clock.getDelta(), gameConfig.maxDelta);
+    const paddleDirection = this.keyboardInput.getDirection();
+    this.paddle.move(
+      paddleDirection.x * gameConfig.paddle.keyboardSpeed * delta,
+      paddleDirection.y * gameConfig.paddle.keyboardSpeed * delta,
+      this.paddleBounds,
+    );
     this.ball.update(delta);
     this.collisionSystem.update(this.ball, this.paddle);
     this.renderer.render(this.scene, this.camera);

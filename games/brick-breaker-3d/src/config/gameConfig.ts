@@ -18,6 +18,9 @@ export const gameConfig = {
     height: 0.55,
     depth: 0.8,
     z: 8.5,
+    minZ: 3,
+    maxZ: 9,
+    keyboardSpeed: 10,
   },
   camera: {
     fov: 48,

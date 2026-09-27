@@ -11,12 +11,11 @@ pnpm install
 pnpm dev:brick-breaker
 ```
 
-터미널에 표시된 주소를 브라우저로 열고 화면을 마우스 또는 손가락으로 드래그하세요.
+터미널에 표시된 주소를 브라우저로 연 뒤 방향키나 WASD로 조작하세요. 모바일에서는 손가락으로 드래그할 수 있습니다.
 
 게임 패키지만 검사하려면 다음 명령을 사용합니다.
 
 ```bash
-pnpm --filter @web-games/brick-breaker-3d test
 pnpm --filter @web-games/brick-breaker-3d typecheck
 pnpm --filter @web-games/brick-breaker-3d build
 ```
@@ -28,7 +27,7 @@ pnpm --filter @web-games/brick-breaker-3d build
 1. `src/config/gameConfig.ts`
 2. `src/objects/Ball.ts`, `src/objects/Paddle.ts`
 3. `src/systems/CollisionSystem.ts`
-4. `src/input/PointerInput.ts`
+4. `src/input/KeyboardInput.ts`, `src/input/PointerInput.ts`
 5. `src/game/Game.ts`
 6. `src/main.ts`
 
@@ -40,7 +39,7 @@ pnpm --filter @web-games/brick-breaker-3d build
 
 ### `src/game/Game.ts`
 
-게임의 조립자이자 실행 관리자입니다. Scene, Camera, Renderer, 조명, 경기장을 만들고 `Ball`, `Paddle`, `CollisionSystem`, `PointerInput`을 연결합니다. 게임 루프와 화면 크기 변경도 이 파일에서 처리합니다.
+게임의 조립자이자 실행 관리자입니다. Scene, Camera, Renderer, 조명, 경기장을 만들고 `Ball`, `Paddle`, `CollisionSystem`, `KeyboardInput`, `PointerInput`을 연결합니다. 게임 루프와 화면 크기 변경도 이 파일에서 처리합니다.
 
 ### `src/objects/Ball.ts`
 
@@ -48,15 +47,19 @@ pnpm --filter @web-games/brick-breaker-3d build
 
 ### `src/objects/Paddle.ts`
 
-패들의 `BoxGeometry` Mesh와 크기를 관리합니다. `setX()`는 패들 중심을 이동시키면서 양 끝이 경기장 벽을 통과하지 않도록 제한합니다.
+패들의 `BoxGeometry` Mesh와 크기를 관리합니다. `setPosition()`과 `move()`는 패들을 X/Z 방향으로 이동시키면서 허용된 영역을 통과하지 않도록 제한합니다.
 
 ### `src/systems/CollisionSystem.ts`
 
 공과 좌우 벽, 뒤쪽 벽, 패들의 충돌을 직접 계산합니다. 충돌 뒤 위치를 경계 안으로 보정하고 속도 방향을 바꿉니다. 공이 아래쪽 경계를 완전히 벗어나면 `Ball.reset()`을 호출합니다.
 
+### `src/input/KeyboardInput.ts`
+
+방향키와 WASD의 눌림 상태를 관리합니다. 좌우와 위아래 입력을 `Vector2` 방향으로 반환하며, 대각선 속도가 더 빨라지지 않도록 정규화합니다.
+
 ### `src/input/PointerInput.ts`
 
-마우스와 터치를 Pointer Events로 통합합니다. 화면 좌표를 Three.js의 NDC 좌표로 바꾸고, Raycaster가 바닥 평면과 만나는 X 좌표를 패들에 전달합니다.
+모바일 터치와 펜 입력을 처리합니다. 마우스 입력은 무시합니다. 화면 좌표를 Three.js의 NDC 좌표로 바꾸고, Raycaster가 바닥 평면과 만나는 X/Z 좌표를 패들에 전달합니다.
 
 ### `src/config/gameConfig.ts`
 
@@ -65,10 +68,6 @@ pnpm --filter @web-games/brick-breaker-3d build
 ### `src/style.css`
 
 canvas를 화면 전체에 맞추고 스크롤과 모바일 기본 제스처를 막습니다. 조작 안내 오버레이와 safe area 여백도 정의합니다.
-
-### `tests/*.test.ts`
-
-공 이동과 리셋, 패들 이동 제한, 벽·패들 충돌, 포인터 소유권, 좌표 변환, delta time 제한을 실제 코드로 검증합니다.
 
 ## Scene, Camera, Renderer, Mesh는 어디에서 생성될까?
 
@@ -89,6 +88,7 @@ canvas를 화면 전체에 맞추고 스크롤과 모바일 기본 제스처를 
 requestAnimationFrame
   → Clock.getDelta()
   → clampDelta()
+  → 키보드 방향으로 패들 이동
   → Ball.update(delta)
   → CollisionSystem.update(...)
   → renderer.render(scene, camera)
@@ -131,19 +131,37 @@ paddle: {
 - `height`: 화면에서 보이는 높이
 - `depth`: 공과 충돌하는 앞뒤 두께
 
-`Paddle.setX()`가 `width / 2`를 고려하므로 폭을 바꿔도 패들이 벽을 뚫지 않습니다.
+`Paddle.setPosition()`이 `width / 2`를 고려하므로 폭을 바꿔도 패들이 벽을 뚫지 않습니다.
+
+## 키보드 이동 범위와 속도 변경하기
+
+`src/config/gameConfig.ts`의 `paddle` 설정에서 변경합니다.
+
+```ts
+paddle: {
+  minZ: 3,
+  maxZ: 9,
+  keyboardSpeed: 10,
+}
+```
+
+- `minZ`: 패들이 위쪽으로 갈 수 있는 최대 지점
+- `maxZ`: 패들이 아래쪽으로 갈 수 있는 최대 지점
+- `keyboardSpeed`: 초당 이동하는 월드 단위
+
+방향키와 WASD를 함께 지원하며, 서로 반대인 키를 동시에 누르면 해당 축의 이동이 상쇄됩니다.
 
 ## 모바일 입력은 어떻게 처리할까?
 
-1. canvas가 `pointerdown`, `pointermove`, `pointerup`, `pointercancel`을 받습니다.
+1. canvas가 터치와 펜의 `pointerdown`, `pointermove`, `pointerup`, `pointercancel`을 받으며 마우스 포인터는 무시합니다.
 2. `setPointerCapture(pointerId)`가 드래그 시작 포인터를 canvas 밖에서도 계속 추적합니다.
 3. 다른 손가락이나 포인터의 이벤트는 활성 포인터 ID와 다르므로 무시합니다.
 4. `clientToNdc()`가 브라우저 좌표를 -1부터 1 사이의 NDC 좌표로 바꿉니다.
 5. `Raycaster.setFromCamera()`가 카메라에서 포인터 방향으로 광선을 만듭니다.
-6. 광선과 Y=0인 바닥 평면의 교점 X를 패들의 목표 위치로 사용합니다.
+6. 광선과 Y=0인 바닥 평면의 교점 X/Z를 패들의 목표 위치로 사용합니다.
 7. CSS의 `touch-action: none`이 드래그 중 페이지 스크롤이나 확대 제스처가 개입하는 것을 막습니다.
 
-마우스, 터치, 펜 입력이 모두 같은 Pointer Events 흐름을 사용하므로 입력 코드를 따로 중복하지 않습니다.
+터치와 펜 입력은 같은 Pointer Events 흐름을 사용하며, 데스크톱에서는 `KeyboardInput`이 키 상태를 게임 루프에 제공합니다.
 
 ## 직접 수정해 볼 연습 5개
 
@@ -153,4 +171,4 @@ paddle: {
 4. **파괴 가능한 벽돌 추가:** `Brick.ts`를 만들고 여러 BoxGeometry Mesh를 배치한 뒤 `CollisionSystem`에 공-벽돌 충돌과 제거 로직을 추가합니다.
 5. **목숨 또는 점수 UI 추가:** 리셋 횟수나 벽돌 제거 횟수를 상태로 저장하고 HTML 오버레이에 표시합니다.
 
-연습할 때는 먼저 원하는 동작을 테스트로 작성하고 실패를 확인한 뒤 최소한의 구현으로 통과시키는 순서를 권장합니다.
+연습할 때는 한 번에 하나의 설정이나 동작만 바꾸고, 브라우저에서 변화가 어떻게 나타나는지 비교해 보세요.

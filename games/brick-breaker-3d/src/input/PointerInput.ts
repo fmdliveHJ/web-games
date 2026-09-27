@@ -47,7 +47,7 @@ export class PointerInput {
     private readonly canvas: PointerSurface,
     private readonly camera: PerspectiveCamera,
     floorY: number,
-    private readonly onMove: (x: number) => void,
+    private readonly onMove: (x: number, z: number) => void,
   ) {
     this.floorPlane = new Plane(new Vector3(0, 1, 0), -floorY);
     this.canvas.addEventListener('pointerdown', this.handlePointerDown);
@@ -64,7 +64,10 @@ export class PointerInput {
   }
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
-    if (this.activePointerId !== null) {
+    if (
+      this.activePointerId !== null ||
+      (event.pointerType !== 'touch' && event.pointerType !== 'pen')
+    ) {
       return;
     }
 
@@ -99,7 +102,7 @@ export class PointerInput {
     this.raycaster.setFromCamera(ndc, this.camera);
 
     if (this.raycaster.ray.intersectPlane(this.floorPlane, this.intersection)) {
-      this.onMove(this.intersection.x);
+      this.onMove(this.intersection.x, this.intersection.z);
     }
   }
 }

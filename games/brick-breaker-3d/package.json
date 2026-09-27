@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"
   },
@@ -16,7 +15,6 @@
   "devDependencies": {
     "@types/three": "^0.180.0",
     "typescript": "^5.9.2",
-    "vite": "^7.1.5",
-    "vitest": "^3.2.4"
+    "vite": "^7.1.5"
   }
 }
