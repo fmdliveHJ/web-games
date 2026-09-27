@@ -7,6 +7,10 @@
   </head>
   <body>
     <main id="app">
+      <div class="view-switcher" aria-label="화면 시점 선택">
+        <button type="button" data-view-mode="2d" aria-pressed="false">2D 보기</button>
+        <button type="button" data-view-mode="3d" aria-pressed="true">3D 보기</button>
+      </div>
       <p class="instructions">방향키/WASD · 모바일 터치로 이동</p>
     </main>
     <script type="module" src="/src/main.ts"></script>

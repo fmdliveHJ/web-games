@@ -26,13 +26,22 @@ export const gameConfig = {
     fov: 48,
     near: 0.1,
     far: 100,
-    position: [0, 18, 18] as const,
-    lookAt: [0, 0, 0] as const,
+    modes: {
+      '2d': {
+        position: [0, 26, 1] as const,
+        lookAt: [0, 0, 0] as const,
+      },
+      '3d': {
+        position: [0, 10.5, 19] as const,
+        lookAt: [0, 0, -1.5] as const,
+      },
+    },
   },
   colors: {
     background: 0x07131f,
     floor: 0x10283b,
     wall: 0x2b6685,
+    grid: 0x3f7894,
     ball: 0xffd166,
     paddle: 0x7ef9c6,
   },

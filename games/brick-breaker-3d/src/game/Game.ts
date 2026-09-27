@@ -5,8 +5,10 @@ import {
   Clock,
   Color,
   DirectionalLight,
+  GridHelper,
   Mesh,
   MeshStandardMaterial,
+  PCFSoftShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
   Scene,
@@ -29,6 +31,8 @@ export function cameraScaleForAspect(aspect: number): number {
   return Math.max(1, 0.9 / safeAspect);
 }
 
+export type ViewMode = '2d' | '3d';
+
 export class Game {
   private readonly scene: Scene;
   private readonly camera: PerspectiveCamera;
@@ -41,6 +45,8 @@ export class Game {
   private readonly pointerInput: PointerInput;
   private readonly paddleBounds: PaddleMovementBounds;
   private readonly arenaMeshes: Mesh<BufferGeometry, MeshStandardMaterial>[] = [];
+  private readonly grid: GridHelper;
+  private viewMode: ViewMode = '3d';
   private animationFrameId: number | null = null;
 
   public constructor(private readonly root: HTMLElement) {
@@ -70,10 +76,12 @@ export class Game {
     this.renderer = new WebGLRenderer({ antialias: true });
     this.renderer.setSize(width, height, false);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = PCFSoftShadowMap;
     root.append(this.renderer.domElement);
 
     this.addLights();
-    this.addArena();
+    this.grid = this.addArena();
 
     this.ball = new Ball({
       radius: gameConfig.ball.radius,
@@ -82,6 +90,7 @@ export class Game {
       startDirection: new Vector3(...gameConfig.ball.startDirection),
       color: colors.ball,
     });
+    this.ball.mesh.castShadow = true;
     this.scene.add(this.ball.mesh);
 
     this.paddle = new Paddle({
@@ -95,6 +104,8 @@ export class Game {
       ),
       color: colors.paddle,
     });
+    this.paddle.mesh.castShadow = true;
+    this.paddle.mesh.receiveShadow = true;
     this.scene.add(this.paddle.mesh);
 
     this.collisionSystem = new CollisionSystem({
@@ -123,6 +134,11 @@ export class Game {
     this.animationFrameId = requestAnimationFrame(this.frame);
   }
 
+  public setViewMode(mode: ViewMode): void {
+    this.viewMode = mode;
+    this.updateCameraPosition(this.camera.aspect);
+  }
+
   public dispose(): void {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
@@ -138,6 +154,13 @@ export class Game {
     for (const mesh of this.arenaMeshes) {
       mesh.geometry.dispose();
       mesh.material.dispose();
+    }
+
+    this.grid.geometry.dispose();
+    if (Array.isArray(this.grid.material)) {
+      this.grid.material.forEach((material) => material.dispose());
+    } else {
+      this.grid.material.dispose();
     }
 
     this.renderer.dispose();
@@ -174,17 +197,31 @@ export class Game {
 
     const keyLight = new DirectionalLight(0xffffff, 2.4);
     keyLight.position.set(-6, 12, 8);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(1024, 1024);
+    keyLight.shadow.camera.left = -12;
+    keyLight.shadow.camera.right = 12;
+    keyLight.shadow.camera.top = 14;
+    keyLight.shadow.camera.bottom = -14;
     this.scene.add(keyLight);
   }
 
   private updateCameraPosition(aspect: number): void {
     const scale = cameraScaleForAspect(aspect);
-    const [x, y, z] = gameConfig.camera.position;
+    const cameraMode = gameConfig.camera.modes[this.viewMode];
+    const [x, y, z] = cameraMode.position;
+    const [lookAtX, lookAtY, lookAtZ] = cameraMode.lookAt;
+    this.camera.up.set(
+      0,
+      this.viewMode === '2d' ? 0 : 1,
+      this.viewMode === '2d' ? -1 : 0,
+    );
     this.camera.position.set(x * scale, y * scale, z * scale);
-    this.camera.lookAt(...gameConfig.camera.lookAt);
+    this.camera.lookAt(lookAtX, lookAtY, lookAtZ);
+    this.camera.updateProjectionMatrix();
   }
 
-  private addArena(): void {
+  private addArena(): GridHelper {
     const { arena, colors } = gameConfig;
     const arenaCenterZ = (arena.backZ + arena.frontZ) / 2;
     const floorGeometry = new PlaneGeometry(arena.width, arena.depth);
@@ -192,7 +229,20 @@ export class Game {
     const floor = new Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.position.z = arenaCenterZ;
+    floor.receiveShadow = true;
     this.addArenaMesh(floor);
+
+    const grid = new GridHelper(arena.depth, 22, colors.grid, colors.grid);
+    grid.position.set(0, 0.012, arenaCenterZ);
+    grid.scale.x = arena.width / arena.depth;
+    const gridMaterials = Array.isArray(grid.material)
+      ? grid.material
+      : [grid.material];
+    for (const material of gridMaterials) {
+      material.transparent = true;
+      material.opacity = 0.22;
+    }
+    this.scene.add(grid);
 
     const sideWallGeometry = (): BoxGeometry =>
       new BoxGeometry(
@@ -236,11 +286,15 @@ export class Game {
       arena.backZ - arena.wallThickness / 2,
     );
     this.addArenaMesh(backWall);
+
+    return grid;
   }
 
   private addArenaMesh(
     mesh: Mesh<BufferGeometry, MeshStandardMaterial>,
   ): void {
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
     this.arenaMeshes.push(mesh);
     this.scene.add(mesh);
   }
