@@ -1,0 +1,37 @@
+export const gameConfig = {
+  arena: {
+    width: 16,
+    depth: 22,
+    wallThickness: 0.5,
+    wallHeight: 1.2,
+    backZ: -10,
+    frontZ: 11,
+  },
+  ball: {
+    radius: 0.4,
+    speed: 9,
+    startPosition: [0, 0.4, 4] as const,
+    startDirection: [0.55, 0, -1] as const,
+  },
+  paddle: {
+    width: 3.8,
+    height: 0.55,
+    depth: 0.8,
+    z: 8.5,
+  },
+  camera: {
+    fov: 48,
+    near: 0.1,
+    far: 100,
+    position: [0, 18, 18] as const,
+    lookAt: [0, 0, 0] as const,
+  },
+  colors: {
+    background: 0x07131f,
+    floor: 0x10283b,
+    wall: 0x2b6685,
+    ball: 0xffd166,
+    paddle: 0x7ef9c6,
+  },
+  maxDelta: 1 / 30,
+} as const;
