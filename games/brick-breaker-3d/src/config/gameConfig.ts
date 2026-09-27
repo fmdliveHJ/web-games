@@ -14,6 +14,17 @@ export const gameConfig = {
     startPosition: [0, 0.4, 4] as const,
     startDirection: [0.55, 0, -1] as const,
   },
+  bricks: {
+    rows: 4,
+    columns: 7,
+    width: 1.8,
+    height: 0.7,
+    depth: 0.9,
+    gap: 0.25,
+    startZ: -7,
+    score: 100,
+    rowColors: [0xf5e8c8, 0xc9dfb7, 0x8fbd87, 0x4f8f64] as const,
+  },
   paddle: {
     width: 3.8,
     height: 0.55,
