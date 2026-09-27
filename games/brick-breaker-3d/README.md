@@ -133,6 +133,30 @@ paddle: {
 
 `Paddle.setPosition()`이 `width / 2`를 고려하므로 폭을 바꿔도 패들이 벽을 뚫지 않습니다.
 
+## 패들의 움직임으로 공 가속하기
+
+패들의 실제 프레임별 이동 속도는 `Paddle.updateVelocity()`가 계산합니다. 공이 패들에 닿을 때 패들이 공을 향해 빠르게 움직이고 있으면 공의 속도가 증가하며, 좌우 움직임은 반사 각도에도 영향을 줍니다.
+
+`src/config/gameConfig.ts`에서 효과를 조절할 수 있습니다.
+
+```ts
+ball: {
+  maxSpeed: 16,
+},
+paddle: {
+  maxTrackedSpeed: 18,
+  forwardBoost: 0.45,
+  lateralTransfer: 0.22,
+}
+```
+
+- `maxSpeed`: 가속된 공의 최대 속도
+- `maxTrackedSpeed`: 충돌 계산에 사용하는 패들 속도의 상한
+- `forwardBoost`: 공을 향한 패들 움직임이 공 속도에 더해지는 비율
+- `lateralTransfer`: 패들의 좌우 움직임이 공 방향에 전달되는 비율
+
+공이 경기장 아래로 빠져 재설정되면 속도도 기본값으로 돌아갑니다.
+
 ## 키보드 이동 범위와 속도 변경하기
 
 `src/config/gameConfig.ts`의 `paddle` 설정에서 변경합니다.

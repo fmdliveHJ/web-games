@@ -6,6 +6,9 @@ export interface ArenaBounds {
   maxX: number;
   backZ: number;
   resetZ: number;
+  maxBallSpeed: number;
+  forwardBoost: number;
+  lateralTransfer: number;
 }
 
 export type CollisionEvent =
@@ -85,10 +88,22 @@ export class CollisionSystem {
     ballPosition.z = paddlePosition.z - halfDepth - ball.radius;
     const hitOffset =
       (ballPosition.x - paddlePosition.x) / (paddle.width / 2);
+    const currentBallSpeed = ball.velocity.length();
+    const paddleForwardSpeed = Math.max(0, -paddle.velocity.y);
+    const nextBallSpeed = Math.min(
+      this.bounds.maxBallSpeed,
+      currentBallSpeed + paddleForwardSpeed * this.bounds.forwardBoost,
+    );
+    const transferredX = paddle.velocity.x * this.bounds.lateralTransfer;
+
     ball.velocity
-      .set(hitOffset * ball.speed * 0.75, 0, -ball.speed)
+      .set(
+        hitOffset * currentBallSpeed * 0.75 + transferredX,
+        0,
+        -currentBallSpeed,
+      )
       .normalize()
-      .multiplyScalar(ball.speed);
+      .multiplyScalar(nextBallSpeed);
     events.push('paddle');
   }
 }

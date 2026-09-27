@@ -10,6 +10,7 @@ export const gameConfig = {
   ball: {
     radius: 0.4,
     speed: 9,
+    maxSpeed: 16,
     startPosition: [0, 0.4, 4] as const,
     startDirection: [0.55, 0, -1] as const,
   },
@@ -21,6 +22,9 @@ export const gameConfig = {
     minZ: 3,
     maxZ: 9,
     keyboardSpeed: 10,
+    maxTrackedSpeed: 18,
+    forwardBoost: 0.45,
+    lateralTransfer: 0.22,
   },
   camera: {
     fov: 48,

@@ -113,6 +113,9 @@ export class Game {
       maxX,
       backZ: arena.backZ,
       resetZ: arena.frontZ,
+      maxBallSpeed: gameConfig.ball.maxSpeed,
+      forwardBoost: gameConfig.paddle.forwardBoost,
+      lateralTransfer: gameConfig.paddle.lateralTransfer,
     });
     this.keyboardInput = new KeyboardInput(window);
     this.pointerInput = new PointerInput(
@@ -175,6 +178,7 @@ export class Game {
       paddleDirection.y * gameConfig.paddle.keyboardSpeed * delta,
       this.paddleBounds,
     );
+    this.paddle.updateVelocity(delta, gameConfig.paddle.maxTrackedSpeed);
     this.ball.update(delta);
     this.collisionSystem.update(this.ball, this.paddle);
     this.renderer.render(this.scene, this.camera);

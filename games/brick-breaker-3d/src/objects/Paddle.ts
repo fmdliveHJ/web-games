@@ -2,6 +2,7 @@ import {
   BoxGeometry,
   Mesh,
   MeshStandardMaterial,
+  Vector2,
   Vector3,
 } from 'three';
 
@@ -24,6 +25,9 @@ export class Paddle {
   public readonly mesh: Mesh<BoxGeometry, MeshStandardMaterial>;
   public readonly width: number;
   public readonly depth: number;
+  public readonly velocity = new Vector2();
+
+  private readonly previousPosition = new Vector2();
 
   public constructor(options: PaddleOptions) {
     this.width = options.width;
@@ -37,6 +41,7 @@ export class Paddle {
     const material = new MeshStandardMaterial({ color: options.color });
     this.mesh = new Mesh(geometry, material);
     this.mesh.position.copy(options.position);
+    this.previousPosition.set(options.position.x, options.position.z);
   }
 
   public setPosition(
@@ -62,6 +67,24 @@ export class Paddle {
       this.mesh.position.z + deltaZ,
       bounds,
     );
+  }
+
+  public updateVelocity(delta: number, maxSpeed: number): void {
+    const currentX = this.mesh.position.x;
+    const currentZ = this.mesh.position.z;
+
+    if (delta <= 0) {
+      this.velocity.set(0, 0);
+    } else {
+      this.velocity
+        .set(
+          (currentX - this.previousPosition.x) / delta,
+          (currentZ - this.previousPosition.y) / delta,
+        )
+        .clampLength(0, maxSpeed);
+    }
+
+    this.previousPosition.set(currentX, currentZ);
   }
 
   public dispose(): void {
