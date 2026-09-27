@@ -1,6 +1,6 @@
-# Three.js 3D 브릭 브레이커 프로토타입
+# Three.js 테니스 캠페인형 3D 브릭 브레이커
 
-Three.js의 기본 객체와 게임 구조를 코드로 학습하기 위한 모바일 웹 프로토타입입니다. 공·패들·벽 충돌의 핵심 루프에 집중했으며, 파괴 가능한 벽돌과 점수 시스템은 연습 과제로 남겨 두었습니다.
+Three.js의 기본 객체와 게임 구조를 코드로 학습하기 위한 모바일 웹 게임입니다. 테니스 코트 분위기의 3D 공간에서 벽돌을 모두 깨는 한 레벨을 플레이하며, 점수·목숨·승리·게임오버·재시작 흐름을 살펴볼 수 있습니다.
 
 ## 실행하기
 
@@ -25,11 +25,12 @@ pnpm --filter @web-games/brick-breaker-3d build
 다음 순서로 읽으면 상수에서 시작해 전체 게임 조립까지 자연스럽게 이어집니다.
 
 1. `src/config/gameConfig.ts`
-2. `src/objects/Ball.ts`, `src/objects/Paddle.ts`
-3. `src/systems/CollisionSystem.ts`
-4. `src/input/KeyboardInput.ts`, `src/input/PointerInput.ts`
-5. `src/game/Game.ts`
-6. `src/main.ts`
+2. `src/objects/Ball.ts`, `src/objects/Paddle.ts`, `src/objects/Brick.ts`
+3. `src/objects/BrickField.ts`, `src/effects/BrickBurst.ts`
+4. `src/systems/GameState.ts`, `src/systems/CollisionSystem.ts`
+5. `src/input/KeyboardInput.ts`, `src/input/PointerInput.ts`
+6. `src/game/Game.ts`
+7. `src/main.ts`
 
 ## 각 파일의 역할
 
@@ -49,9 +50,21 @@ pnpm --filter @web-games/brick-breaker-3d build
 
 패들의 `BoxGeometry` Mesh와 크기를 관리합니다. `setPosition()`과 `move()`는 패들을 X/Z 방향으로 이동시키면서 허용된 영역을 통과하지 않도록 제한합니다.
 
+### `src/objects/Brick.ts`, `src/objects/BrickField.ts`
+
+`Brick`은 벽돌 하나의 Mesh, 크기, 점수와 활성 상태를 관리합니다. `BrickField`는 설정값으로 벽돌 행과 열을 만들고, 제거·재생성·GPU 자원 정리를 담당합니다.
+
+### `src/effects/BrickBurst.ts`
+
+벽돌이 깨질 때 작은 BoxGeometry 조각을 방사형으로 생성합니다. 각 조각은 짧게 이동하고 회전하며 사라진 뒤 Scene과 GPU 메모리에서 제거됩니다.
+
+### `src/systems/GameState.ts`
+
+`ready`, `playing`, `won`, `game-over` 상태와 점수·목숨을 Three.js 화면과 분리해 관리합니다.
+
 ### `src/systems/CollisionSystem.ts`
 
-공과 좌우 벽, 뒤쪽 벽, 패들의 충돌을 직접 계산합니다. 충돌 뒤 위치를 경계 안으로 보정하고 속도 방향을 바꿉니다. 공이 아래쪽 경계를 완전히 벗어나면 `Ball.reset()`을 호출합니다.
+공과 좌우 벽, 뒤쪽 벽, 패들, 벽돌의 충돌을 직접 계산합니다. 충돌 뒤 위치를 경계 밖으로 보정하고 속도 방향을 바꿉니다. 공이 아래쪽 경계를 완전히 벗어나면 `Ball.reset()`을 호출합니다.
 
 ### `src/input/KeyboardInput.ts`
 
@@ -77,6 +90,8 @@ canvas를 화면 전체에 맞추고 스크롤과 모바일 기본 제스처를 
 - 바닥과 좌우·뒤쪽 벽 Mesh: `src/game/Game.ts`의 `addArena()`
 - 공 Mesh: `src/objects/Ball.ts`의 `Ball` 생성자
 - 패들 Mesh: `src/objects/Paddle.ts`의 `Paddle` 생성자
+- 벽돌 Mesh: `src/objects/Brick.ts`의 `Brick` 생성자
+- 파편 Mesh: `src/effects/BrickBurst.ts`의 `spawn()`
 
 `Game`은 객체를 만든 뒤 `scene.add(...)`로 Scene 그래프에 연결합니다. Renderer는 Camera가 바라보는 Scene을 매 프레임 canvas에 그립니다.
 
@@ -88,9 +103,12 @@ canvas를 화면 전체에 맞추고 스크롤과 모바일 기본 제스처를 
 requestAnimationFrame
   → Clock.getDelta()
   → clampDelta()
+  → playing 상태 확인
   → 키보드 방향으로 패들 이동
   → Ball.update(delta)
   → CollisionSystem.update(...)
+  → 점수·목숨·승패 상태 갱신
+  → BrickBurst.update(delta)
   → renderer.render(scene, camera)
   → 다음 requestAnimationFrame 예약
 ```
@@ -157,6 +175,32 @@ paddle: {
 
 공이 경기장 아래로 빠져 재설정되면 속도도 기본값으로 돌아갑니다.
 
+## 벽돌 배열과 점수 변경하기
+
+`src/config/gameConfig.ts`의 `bricks`에서 행·열, 크기, 간격, 시작 위치와 점수를 바꿉니다.
+
+```ts
+bricks: {
+  rows: 4,
+  columns: 7,
+  gap: 0.25,
+  score: 100,
+}
+```
+
+`rowColors` 배열은 행마다 사용할 색을 정합니다. 배열보다 행이 많으면 색상이 처음부터 반복됩니다.
+
+## 게임 상태 흐름
+
+```text
+ready → playing → ready       공 유실, 목숨 남음
+                → game-over   마지막 목숨 유실
+                → won         모든 벽돌 제거
+won/game-over → reset → ready
+```
+
+`GameState`는 점수와 목숨만 관리하고, `Game`은 충돌 이벤트를 상태 변경으로 변환합니다. `main.ts`는 스냅샷을 받아 HUD와 오버레이를 갱신합니다.
+
 ## 키보드 이동 범위와 속도 변경하기
 
 `src/config/gameConfig.ts`의 `paddle` 설정에서 변경합니다.
@@ -192,7 +236,7 @@ paddle: {
 1. **색상 변경:** `gameConfig.colors`를 바꿔 바닥, 벽, 공, 패들의 대비를 실험합니다.
 2. **공 속도 변경:** `gameConfig.ball.speed`를 `6`, `12`, `18`로 바꾸고 난이도와 delta time의 관계를 관찰합니다.
 3. **패들 크기 변경:** `gameConfig.paddle.width`를 줄이거나 늘리고 경계 제한과 충돌 범위가 함께 바뀌는지 확인합니다.
-4. **파괴 가능한 벽돌 추가:** `Brick.ts`를 만들고 여러 BoxGeometry Mesh를 배치한 뒤 `CollisionSystem`에 공-벽돌 충돌과 제거 로직을 추가합니다.
-5. **목숨 또는 점수 UI 추가:** 리셋 횟수나 벽돌 제거 횟수를 상태로 저장하고 HTML 오버레이에 표시합니다.
+4. **벽돌 배열 변경:** `rows`, `columns`, `gap`을 바꿔 난이도와 화면 밀도의 관계를 관찰합니다.
+5. **두 번 맞아야 깨지는 벽돌:** `Brick`에 내구도를 추가하고 맞을 때마다 색을 바꾼 뒤 내구도가 0일 때만 제거합니다.
 
 연습할 때는 한 번에 하나의 설정이나 동작만 바꾸고, 브라우저에서 변화가 어떻게 나타나는지 비교해 보세요.

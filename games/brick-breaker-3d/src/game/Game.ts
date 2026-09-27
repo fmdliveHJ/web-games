@@ -322,6 +322,33 @@ export class Game {
     }
     this.scene.add(grid);
 
+    const lineMaterial = (): MeshStandardMaterial =>
+      new MeshStandardMaterial({
+        color: colors.courtLine,
+        roughness: 0.8,
+      });
+    const addCourtLine = (
+      width: number,
+      depth: number,
+      x: number,
+      z: number,
+    ): void => {
+      const line = new Mesh(
+        new BoxGeometry(width, 0.035, depth),
+        lineMaterial(),
+      );
+      line.position.set(x, 0.025, z);
+      line.receiveShadow = true;
+      this.addArenaMesh(line);
+    };
+
+    addCourtLine(arena.width - 1, 0.12, 0, arena.backZ + 0.65);
+    addCourtLine(arena.width - 1, 0.12, 0, arena.frontZ - 0.65);
+    addCourtLine(0.12, arena.depth - 1.3, -arena.width / 2 + 0.5, arenaCenterZ);
+    addCourtLine(0.12, arena.depth - 1.3, arena.width / 2 - 0.5, arenaCenterZ);
+    addCourtLine(arena.width - 1, 0.1, 0, 0.5);
+    addCourtLine(0.1, 8.1, 0, -3.55);
+
     const sideWallGeometry = (): BoxGeometry =>
       new BoxGeometry(
         arena.wallThickness,

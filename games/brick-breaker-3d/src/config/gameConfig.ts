@@ -54,12 +54,13 @@ export const gameConfig = {
     },
   },
   colors: {
-    background: 0x07131f,
-    floor: 0x10283b,
-    wall: 0x2b6685,
-    grid: 0x3f7894,
+    background: 0x061b13,
+    floor: 0x164e36,
+    wall: 0x0f3f2b,
+    grid: 0x6f987c,
+    courtLine: 0xf5e8c8,
     ball: 0xffd166,
-    paddle: 0x7ef9c6,
+    paddle: 0xf5e8c8,
   },
   maxDelta: 1 / 30,
 } as const;

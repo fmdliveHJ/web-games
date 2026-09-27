@@ -1,7 +1,7 @@
 :root {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
   color: #e9fbff;
-  background: #07131f;
+  background: #061b13;
   font-synthesis: none;
 }
 
@@ -20,7 +20,7 @@ body,
 }
 
 body {
-  background: #07131f;
+  background: #061b13;
 }
 
 #app {
@@ -36,7 +36,7 @@ canvas {
 
 .instructions {
   position: absolute;
-  z-index: 1;
+  z-index: 4;
   top: 0;
   left: 50%;
   margin: 0;
@@ -54,7 +54,7 @@ canvas {
 
 .hud {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   top: max(1rem, env(safe-area-inset-top));
   right: max(1rem, env(safe-area-inset-right));
   left: max(1rem, env(safe-area-inset-left));
@@ -140,15 +140,15 @@ canvas {
 
 .view-switcher {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   top: max(3.5rem, calc(env(safe-area-inset-top) + 3rem));
   left: 50%;
   display: flex;
   gap: 0.35rem;
   padding: 0.3rem;
-  border: 1px solid rgba(126, 249, 198, 0.22);
+  border: 1px solid rgba(245, 232, 200, 0.28);
   border-radius: 999px;
-  background: rgba(7, 19, 31, 0.72);
+  background: rgba(6, 27, 19, 0.78);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(10px);
   transform: translateX(-50%);
@@ -170,9 +170,34 @@ canvas {
 }
 
 .view-switcher button[aria-pressed='true'] {
-  color: #07131f;
-  background: #7ef9c6;
-  box-shadow: 0 4px 14px rgba(126, 249, 198, 0.24);
+  color: #173f2c;
+  background: #f5e8c8;
+  box-shadow: 0 4px 14px rgba(245, 232, 200, 0.2);
+}
+
+@media (max-width: 560px) {
+  .hud {
+    top: max(0.75rem, env(safe-area-inset-top));
+  }
+
+  .instructions {
+    top: 2.4rem;
+    padding-top: 0;
+    font-size: 0.68rem;
+  }
+
+  .view-switcher {
+    top: max(4.2rem, calc(env(safe-area-inset-top) + 3.6rem));
+  }
+
+  .view-switcher button {
+    min-width: 5rem;
+    min-height: 2.75rem;
+  }
+
+  .game-overlay__card {
+    border-radius: 1.2rem;
+  }
 }
 
 .view-switcher button:focus-visible {
